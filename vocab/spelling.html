@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>拼字捕捉訓練</title>
+<style>
+:root{--ink:#1f2a44;--muted:#667085;--line:#2c3a57;--yellow:#ffd75e;--green:#54c985;--red:#ef5b67;--sky:#dff4ff}
+*{box-sizing:border-box}body{margin:0;font-family:"Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:#c8edff;background-image:linear-gradient(rgba(255,255,255,.32) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.32) 1px,transparent 1px);background-size:24px 24px;min-height:100vh}.wrap{width:min(900px,calc(100% - 20px));margin:auto;padding:20px 0 48px}.head,.panel{background:#fff;border:3px solid var(--line);border-radius:20px;box-shadow:0 7px 0 rgba(44,58,87,.18)}.head{padding:14px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}.head h1{margin:0;font-size:clamp(25px,5vw,38px)}.sub{font-size:13px;color:var(--muted);margin-top:4px}.orb{width:52px;height:52px;border-radius:50%;border:3px solid var(--line);background:linear-gradient(#72c0ff 0 45%,#fff 45% 55%,#ffd75e 55%);flex:0 0 auto}.panel{margin-top:14px;padding:18px}.controls{display:flex;gap:8px;flex-wrap:wrap}.control,.btn{font:inherit;border:2px solid var(--line);border-radius:12px;background:#fff;padding:10px 12px}.btn{font-weight:800;cursor:pointer;box-shadow:0 3px 0 rgba(44,58,87,.16)}.btn.primary{background:var(--yellow)}.btn.red{background:#ffe3e6}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.stat{border:2px solid var(--line);border-radius:14px;padding:9px;text-align:center;background:#f8fbff}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}.arena{border:3px dashed #648165;border-radius:22px;background:linear-gradient(#f0ffeb,#dff6d9);padding:20px;min-height:390px;display:flex;flex-direction:column;justify-content:center}.label{display:inline-block;background:#8667df;color:white;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800}.meaning{font-size:clamp(32px,7vw,52px);font-weight:900;margin:18px 0 8px;text-align:center}.question{text-align:center;color:var(--muted);font-size:14px}.inputRow{display:flex;gap:8px;margin:18px auto 0;max-width:620px;width:100%}.spellInput{flex:1;border:3px solid var(--line);border-radius:14px;padding:13px 14px;font-size:22px;font-weight:800;outline:none}.spellInput:focus{box-shadow:0 0 0 4px rgba(77,141,255,.16)}.result{min-height:78px;margin:14px auto 0;max-width:620px;width:100%;border:2px solid transparent;border-radius:14px;padding:12px;text-align:center;font-weight:800}.result.correct{background:#def7e8;border-color:#339662}.result.wrong{background:#ffe4e7;border-color:#c9404d}.answer{font-size:24px;margin-top:5px}.hintline{font-size:12px;color:var(--muted);margin-top:5px}.bottom{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.links a{color:#315efb;text-decoration:none;font-weight:700}.empty{text-align:center;color:var(--muted);padding:40px 10px}.progress{height:12px;background:#eef2f7;border:2px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}.progress div{height:100%;width:0;background:linear-gradient(90deg,#ffd75e,#ff9d4d)}
+@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.inputRow{flex-direction:column}.head{align-items:flex-start}.arena{min-height:360px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div><h1>拼字捕捉訓練</h1><div class="sub">看到中文 → 自己輸入完整英文。拼錯任何字母都算錯。</div></div>
+    <div class="orb" aria-hidden="true"></div>
+  </div>
+  <section class="panel">
+    <div class="controls">
+      <select id="scope" class="control"><option value="all">全部 137 字</option><option value="deck1">第一組 100 字</option><option value="deck2">第二組 37 字</option><option value="missed">只練目前錯題</option></select>
+      <select id="orderMode" class="control"><option value="shuffle">隨機順序</option><option value="ordered">原始順序</option></select>
+      <button id="restart" class="btn primary">重新開始</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="remaining">0</b><span>本輪剩餘</span></div>
+      <div class="stat"><b id="correct">0</b><span>答對</span></div>
+      <div class="stat"><b id="wrong">0</b><span>答錯</span></div>
+      <div class="stat"><b id="streak">0</b><span>連續答對</span></div>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+
+    <div class="arena" id="arena">
+      <div style="text-align:center"><span class="label">野生拼字題出現了</span></div>
+      <div class="meaning" id="meaning">載入中…</div>
+      <div class="question">請輸入這個中文意思對應的英文單字</div>
+      <div class="inputRow">
+        <input id="spellInput" class="spellInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the English word" />
+        <button id="submit" class="btn primary">確認拼字</button>
+      </div>
+      <div id="result" class="result"></div>
+      <div class="bottom">
+        <button id="speak" class="btn">🔊 聽發音</button>
+        <button id="next" class="btn" disabled>下一題 →</button>
+      </div>
+    </div>
+
+    <div class="links"><a href="./adventure.html">← 回單字訓練家冒險</a><a href="./wrong.html">錯題練習</a><a href="./review.html">篩選複習</a></div>
+  </section>
+</div>
+<script>
+let DATA=null,pool=[],pos=0,answered=false,good=0,bad=0,streak=0,startTotal=0;
+const $=id=>document.getElementById(id);const pkey=d=>`vocab-progress-${d}`;
+function getProgress(d){return JSON.parse(localStorage.getItem(pkey(d))||'{}')}
+function setProgress(d,p){localStorage.setItem(pkey(d),JSON.stringify(p))}
+async function loadData(){
+  const html=await fetch('./index.html',{cache:'no-store'}).then(r=>r.text());
+  const m=html.match(/const DATA = (\{[\s\S]*?\});\s*let currentDeck/);
+  if(!m) throw new Error('找不到單字資料');
+  DATA=JSON.parse(m[1]);startRound();
+}
+function baseCards(){
+  const scope=$('scope').value;let arr=[];
+  if(scope==='deck1'||scope==='all'||scope==='missed') DATA.deck1.forEach((x,i)=>arr.push({...x,deck:'deck1',idx:i}));
+  if(scope==='deck2'||scope==='all'||scope==='missed') DATA.deck2.forEach((x,i)=>arr.push({...x,deck:'deck2',idx:i}));
+  if(scope==='missed') arr=arr.filter(x=>getProgress(x.deck)[x.idx]==='missed');
+  return arr;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startRound(){pool=baseCards();if($('orderMode').value==='shuffle')shuffle(pool);pos=0;answered=false;good=0;bad=0;streak=0;startTotal=pool.length;render();}
+function current(){return pool[pos]||null}
+function normalize(s){return s.trim().toLowerCase()}
+function render(){
+  $('correct').textContent=good;$('wrong').textContent=bad;$('streak').textContent=streak;$('remaining').textContent=Math.max(0,pool.length-pos);
+  $('bar').style.width=startTotal?`${((pos)/startTotal)*100}%`:'0%';
+  const x=current();
+  if(!x){$('arena').innerHTML=`<div class="empty"><h2>本輪完成</h2><p>答對 ${good} 題，答錯 ${bad} 題。</p><p>${startTotal?`正確率 ${Math.round(good/startTotal*100)}%`:'目前沒有符合條件的單字。'}</p></div>`;return}
+  $('meaning').textContent=x.back;$('spellInput').value='';$('spellInput').disabled=false;$('submit').disabled=false;$('next').disabled=true;$('result').className='result';$('result').innerHTML='';answered=false;setTimeout(()=>$('spellInput').focus(),50)
+}
+function submit(){
+  const x=current();if(!x||answered)return;const typed=$('spellInput').value;if(!typed.trim())return;
+  answered=true;$('spellInput').disabled=true;$('submit').disabled=true;$('next').disabled=false;
+  const ok=normalize(typed)===normalize(x.front);const p=getProgress(x.deck);
+  if(ok){good++;streak++;p[x.idx]='known';setProgress(x.deck,p);$('result').className='result correct';$('result').innerHTML=`捕捉成功！拼字完全正確<div class="answer">${x.front}</div>`}
+  else{bad++;streak=0;p[x.idx]='missed';setProgress(x.deck,p);$('result').className='result wrong';$('result').innerHTML=`拼字不正確<div class="answer">正確：${x.front}</div><div class="hintline">你輸入：${escapeHtml(typed)}</div>`}
+  $('correct').textContent=good;$('wrong').textContent=bad;$('streak').textContent=streak;
+}
+function next(){if(!answered)return;pos++;render()}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function speak(){const x=current();if(!x)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(x.front);u.lang='en-US';u.rate=.82;speechSynthesis.speak(u)}
+$('submit').onclick=submit;$('next').onclick=next;$('speak').onclick=speak;$('restart').onclick=startRound;$('scope').onchange=startRound;$('orderMode').onchange=startRound;
+$('spellInput').addEventListener('keydown',e=>{if(e.key==='Enter'){if(answered)next();else submit()}});
+loadData().catch(e=>{$('meaning').textContent='單字資料載入失敗';$('result').textContent=e.message});
+</script>
+</body>
+</html>
