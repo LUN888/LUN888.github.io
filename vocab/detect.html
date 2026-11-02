@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>拼字找錯訓練</title>
+<style>
+:root{--ink:#1f2a44;--muted:#667085;--line:#2c3a57;--yellow:#ffd75e;--red:#ef5b67;--green:#49b878;--blue:#dff4ff}
+*{box-sizing:border-box}body{margin:0;font-family:"Microsoft JhengHei",system-ui,sans-serif;background:#c9edff;color:var(--ink);min-height:100vh}.wrap{width:min(980px,calc(100% - 20px));margin:auto;padding:20px 0 48px}.head,.panel{background:#fff;border:3px solid var(--line);border-radius:20px;box-shadow:0 7px 0 rgba(44,58,87,.18)}.head{padding:15px 17px}.head h1{margin:0;font-size:clamp(26px,5vw,40px)}.sub{color:var(--muted);font-size:13px;margin-top:5px}.panel{margin-top:14px;padding:16px}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.btn,.control{font:inherit;border:2px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff}.btn{font-weight:800;cursor:pointer;box-shadow:0 3px 0 rgba(44,58,87,.16)}.btn.primary{background:var(--yellow)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.stat{border:2px solid var(--line);border-radius:14px;padding:10px;text-align:center;background:#f8fbff}.stat b{display:block;font-size:21px}.stat span{font-size:12px;color:var(--muted)}.arena{border:3px dashed #6c8669;border-radius:20px;padding:18px;background:linear-gradient(#f1ffed,#def6d8)}.title{text-align:center;font-weight:900;font-size:20px}.help{text-align:center;color:var(--muted);font-size:13px;margin:5px 0 14px}.words{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.word{border:3px solid var(--line);border-radius:14px;background:#fff;padding:15px 14px;text-align:left;font-size:20px;font-weight:900;cursor:pointer;min-height:60px}.word:hover{background:#fff8d8}.word.correct{background:#def7e8;border-color:#2f9360}.word.wrong{background:#ffe4e7;border-color:#c9404d}.word:disabled{cursor:default}.result{min-height:65px;margin-top:14px;border-radius:14px;padding:12px;text-align:center;font-weight:800}.result.ok{background:#def7e8;border:2px solid #2f9360}.result.no{background:#ffe4e7;border:2px solid #c9404d}.answer{font-size:22px;margin-top:5px}.bottom{display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}.progress{height:12px;border:2px solid var(--line);background:#eef2f7;border-radius:999px;overflow:hidden;margin-top:12px}.progress>div{height:100%;background:linear-gradient(90deg,#ffd75e,#ff9d4d);width:0}.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.links a{text-decoration:none;color:#315efb;font-weight:700}.note{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.words{grid-template-columns:1fr}.word{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="head"><h1>拼字找錯訓練</h1><div class="sub">每題 8 個單字，其中只有 1 個拼錯。你必須自己找出錯字。</div></div>
+<section class="panel">
+<div class="toolbar">
+<select id="scope" class="control"><option value="all">全部 137 字</option><option value="weak">只練尚未通過／曾答錯</option></select>
+<button id="restart" class="btn primary">重新開始</button>
+</div>
+<div class="stats">
+<div class="stat"><b id="mastered">0</b><span>已通過單字</span></div>
+<div class="stat"><b id="remaining">137</b><span>尚未通過</span></div>
+<div class="stat"><b id="correct">0</b><span>本輪答對</span></div>
+<div class="stat"><b id="wrong">0</b><span>本輪答錯</span></div>
+</div>
+<div class="progress"><div id="bar"></div></div>
+<div class="arena">
+<div class="title">哪一個英文單字拼錯了？</div>
+<div class="help">不要看中文提示。直接靠你對拼字的熟悉度判斷。</div>
+<div id="words" class="words"></div>
+<div id="result" class="result"></div>
+<div class="bottom"><button id="next" class="btn" disabled>下一題 →</button></div>
+</div>
+<div class="note">規則：第一次答對可通過；如果這個字曾經答錯，之後需要連續答對 2 次才算真正通過。</div>
+<div class="links"><a href="./spelling.html">完整拼字輸入</a><a href="./wrong.html">錯題練習</a><a href="./adventure.html">單字訓練家冒險</a></div>
+</section>
+</div>
+<script>
+let DATA=null,ALL=[],question=null,answered=false,good=0,bad=0;
+const $=id=>document.getElementById(id), MKEY='vocab-detect-mastery-v1';
+function mastery(){return JSON.parse(localStorage.getItem(MKEY)||'{}')}function saveMastery(x){localStorage.setItem(MKEY,JSON.stringify(x))}
+function progressKey(d){return `vocab-progress-${d}`}function vocabProgress(d){return JSON.parse(localStorage.getItem(progressKey(d))||'{}')}function saveVocab(d,p){localStorage.setItem(progressKey(d),JSON.stringify(p))}
+async function load(){const html=await fetch('./index.html',{cache:'no-store'}).then(r=>r.text());const m=html.match(/const DATA = (\{[\s\S]*?\});\s*let currentDeck/);if(!m)throw new Error('找不到單字資料');DATA=JSON.parse(m[1]);['deck1','deck2'].forEach(d=>DATA[d].forEach((x,i)=>ALL.push({...x,deck:d,idx:i,id:`${d}:${i}`})));newQuestion();updateStats()}
+function sample(a,n){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b.slice(0,n)}
+function mutate(w){const s=w.toLowerCase();let tries=0;while(tries++<50){let a=s.split(''),type=Math.floor(Math.random()*4);if(type===0&&a.length>4){a.splice(1+Math.floor(Math.random()*(a.length-2)),1)}else if(type===1&&a.length>3){let i=1+Math.floor(Math.random()*(a.length-2));[a[i],a[i+1]]=[a[i+1],a[i]]}else if(type===2){let i=Math.floor(Math.random()*a.length);let letters='abcdefghijklmnopqrstuvwxyz';a[i]=letters[Math.floor(Math.random()*letters.length)]}else{let i=1+Math.floor(Math.random()*Math.max(1,a.length-1));a.splice(i,0,a[Math.max(0,i-1)])}let out=a.join('');if(out!==s&&!ALL.some(x=>x.front.toLowerCase()===out))return out.charAt(0).toUpperCase()+out.slice(1)}return w+'x'}
+function candidateTargets(){const m=mastery();if($('scope').value==='weak'){const weak=ALL.filter(x=>!m[x.id]||!m[x.id].passed);return weak.length?weak:ALL}return ALL}
+function newQuestion(){answered=false;$('result').className='result';$('result').innerHTML='';$('next').disabled=true;const target=sample(candidateTargets(),1)[0];let others=sample(ALL.filter(x=>x.id!==target.id),7);let items=[...others.map(x=>({text:x.front,bad:false,word:x})),{text:mutate(target.front),bad:true,word:target}];items=sample(items,items.length);question={target,items};const box=$('words');box.innerHTML='';items.forEach((it,i)=>{const b=document.createElement('button');b.className='word';b.textContent=it.text;b.onclick=()=>choose(i,b);box.appendChild(b)});updateStats()}
+function choose(i,btn){if(answered)return;answered=true;$('next').disabled=false;document.querySelectorAll('.word').forEach(x=>x.disabled=true);const it=question.items[i],m=mastery(),id=question.target.id,rec=m[id]||{streak:0,everWrong:false,passed:false};if(it.bad){good++;rec.streak=(rec.streak||0)+1;const need=rec.everWrong?2:1;if(rec.streak>=need)rec.passed=true;m[id]=rec;saveMastery(m);btn.classList.add('correct');$('result').className='result ok';$('result').innerHTML=`找到了。錯字是 <div class="answer">${it.text} → ${question.target.front}</div>`}else{bad++;rec.everWrong=true;rec.streak=0;rec.passed=false;m[id]=rec;saveMastery(m);btn.classList.add('wrong');const trueIndex=question.items.findIndex(x=>x.bad);document.querySelectorAll('.word')[trueIndex].classList.add('correct');const p=vocabProgress(question.target.deck);p[question.target.idx]='missed';saveVocab(question.target.deck,p);$('result').className='result no';$('result').innerHTML=`這個字本身沒有拼錯。真正的錯字是 <div class="answer">${question.items[trueIndex].text} → ${question.target.front}</div>`}updateStats()}
+function updateStats(){const m=mastery(),passed=ALL.filter(x=>m[x.id]?.passed).length;$('mastered').textContent=passed;$('remaining').textContent=137-passed;$('correct').textContent=good;$('wrong').textContent=bad;$('bar').style.width=`${passed/137*100}%`}
+$('next').onclick=newQuestion;$('restart').onclick=()=>{good=0;bad=0;newQuestion()};$('scope').onchange=newQuestion;load().catch(e=>{$('words').innerHTML=`<div>${e.message}</div>`})
+</script>
+</body>
+</html>
