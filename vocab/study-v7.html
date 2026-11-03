@@ -4,98 +4,95 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>學術英文四階段訓練 V7</title>
-<style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dff3ff}
-#app{position:fixed;inset:0;width:100%;height:100%;border:0;background:white}
-#kbHint{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:99999;background:rgba(25,35,58,.94);color:#fff;padding:8px 15px;border-radius:999px;font:700 14px "Microsoft JhengHei",system-ui,sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.2);pointer-events:none;white-space:nowrap}
-@media(max-width:600px){#kbHint{font-size:12px;padding:7px 10px}}
-</style>
 </head>
 <body>
-<iframe id="app" src="./study-v7-core.html" title="學術英文四階段訓練"></iframe>
-<div id="kbHint">第一階段快捷鍵：Enter 顯示中文　← 不會　→ 會</div>
+<div style="font-family:system-ui;padding:24px">正在載入鍵盤版學術英文訓練…</div>
 <script>
-(function(){
-  function isTyping(doc){
-    const a=doc.activeElement;
-    return !!(a && (a.matches?.('input, textarea, select') || a.isContentEditable));
+(async()=>{
+  try{
+    let src=await fetch('./study-v6.html?v7kb=20261104',{cache:'no-store'}).then(r=>r.text());
+
+    const kbScript=`<script>(function(){
+      function hidden(el){return !el || el.classList.contains('hidden') || getComputedStyle(el).display==='none' || getComputedStyle(el).visibility==='hidden';}
+      function isTyping(doc){
+        const a=doc.activeElement;
+        return !!(a && (a.matches('input,textarea,select') || a.isContentEditable));
+      }
+      function innerDoc(){
+        const f=document.getElementById('app');
+        if(!f)return null;
+        try{
+          const d=f.contentDocument;
+          if(d && d.getElementById('recReveal'))return d;
+        }catch(e){}
+        return null;
+      }
+      function runKey(key){
+        const d=innerDoc();
+        if(!d || isTyping(d))return false;
+        const mode=d.getElementById('recognition');
+        if(!mode || mode.classList.contains('hidden'))return false;
+        const reveal=d.getElementById('recReveal');
+        const miss=d.getElementById('recMiss');
+        const know=d.getElementById('recKnow');
+        if(key==='Enter'){
+          if(reveal && !hidden(reveal) && !reveal.disabled){reveal.click();return true;}
+          return false;
+        }
+        if(key==='ArrowLeft'){
+          if(miss && !hidden(miss) && !miss.disabled){miss.click();return true;}
+          return false;
+        }
+        if(key==='ArrowRight'){
+          if(know && !hidden(know) && !know.disabled){know.click();return true;}
+          return false;
+        }
+        return false;
+      }
+      function handler(e){
+        if(runKey(e.key)){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation && e.stopImmediatePropagation();
+        }
+      }
+      function install(){
+        const d=innerDoc();
+        if(!d)return;
+        if(!d.documentElement.dataset.stage1Kb){
+          d.documentElement.dataset.stage1Kb='1';
+          d.addEventListener('keydown',handler,true);
+          try{d.defaultView.addEventListener('keydown',handler,true);}catch(e){}
+        }
+        const f=document.getElementById('app');
+        if(f && !f.dataset.stage1KbFocus){
+          f.dataset.stage1KbFocus='1';
+          try{f.contentWindow.focus();}catch(e){}
+        }
+      }
+      document.addEventListener('keydown',handler,true);
+      window.addEventListener('keydown',handler,true);
+      const f=document.getElementById('app');
+      if(f)f.addEventListener('load',()=>{setTimeout(install,100);setTimeout(install,500);setTimeout(install,1200);});
+      setInterval(install,300);
+
+      const hint=document.createElement('div');
+      hint.textContent='Enter 顯示中文　← 不會　→ 會了';
+      hint.style.cssText='position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:99999;background:rgba(31,42,68,.94);color:#fff;padding:8px 15px;border-radius:999px;font:700 14px Microsoft JhengHei,system-ui,sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.2);pointer-events:none;white-space:nowrap';
+      document.body.appendChild(hint);
+    })();<\/script>`;
+
+    const needle='document.open();document.write(h);document.close();';
+    const replacement=`h=h.replace('</body>',${JSON.stringify(kbScript)}+'</body>');document.open();document.write(h);document.close();`;
+    if(!src.includes(needle))throw new Error('找不到 V6 最終載入位置');
+    src=src.replace(needle,replacement);
+    document.open();
+    document.write(src);
+    document.close();
+  }catch(e){
+    document.body.innerHTML='<div style="font-family:system-ui;padding:24px"><h2>載入失敗</h2><p>'+e.message+'</p></div>';
+    console.error(e);
   }
-
-  function visible(el){
-    if(!el) return false;
-    const win=el.ownerDocument.defaultView;
-    const s=win.getComputedStyle(el);
-    return s.display!=='none' && s.visibility!=='hidden' && !el.classList.contains('hidden');
-  }
-
-  function childDocs(doc){
-    const out=[];
-    try{
-      doc.querySelectorAll('iframe').forEach(f=>{
-        try{if(f.contentDocument)out.push(f.contentDocument)}catch(e){}
-      });
-    }catch(e){}
-    return out;
-  }
-
-  function allDocs(){
-    const seen=new Set(), list=[];
-    function walk(doc){
-      if(!doc||seen.has(doc))return;
-      seen.add(doc);list.push(doc);
-      childDocs(doc).forEach(walk);
-    }
-    walk(document);
-    return list;
-  }
-
-  function targetDoc(){
-    return allDocs().find(d=>d.getElementById('recReveal')&&d.getElementById('recognition'))||null;
-  }
-
-  function perform(e){
-    const doc=targetDoc();
-    if(!doc) return;
-    if(isTyping(doc)) return;
-
-    const mode=doc.getElementById('recognition');
-    if(!mode || mode.classList.contains('hidden')) return;
-
-    const reveal=doc.getElementById('recReveal');
-    const miss=doc.getElementById('recMiss');
-    const know=doc.getElementById('recKnow');
-
-    if(e.key==='Enter' && visible(reveal) && !reveal.disabled){
-      e.preventDefault(); e.stopPropagation(); reveal.click(); return;
-    }
-    if(e.key==='ArrowLeft' && visible(miss) && !miss.disabled){
-      e.preventDefault(); e.stopPropagation(); miss.click(); return;
-    }
-    if(e.key==='ArrowRight' && visible(know) && !know.disabled){
-      e.preventDefault(); e.stopPropagation(); know.click(); return;
-    }
-  }
-
-  function installEverywhere(){
-    allDocs().forEach(doc=>{
-      if(doc.__stage1KeysV7)return;
-      doc.__stage1KeysV7=true;
-      doc.addEventListener('keydown',perform,true);
-      try{doc.defaultView.addEventListener('keydown',perform,true)}catch(e){}
-    });
-  }
-
-  document.addEventListener('keydown',perform,true);
-  setInterval(installEverywhere,250);
-
-  // 載入後把焦點送進最深層學習頁；即使沒點滑鼠也能直接按鍵
-  setTimeout(function focusDeep(){
-    const doc=targetDoc();
-    if(doc){
-      try{doc.defaultView.focus()}catch(e){}
-      try{doc.body.tabIndex=-1;doc.body.focus({preventScroll:true})}catch(e){}
-    }else setTimeout(focusDeep,300);
-  },500);
 })();
 </script>
 </body>
