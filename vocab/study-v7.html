@@ -1,1 +1,30 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>學術英文四階段訓練 V7</title></head><body><div style="font-family:system-ui;padding:24px">正在載入教授論文來源題庫…</div><script>(async()=>{try{let h=await fetch('./study-v6.html?unique=1',{cache:'no-store'}).then(r=>r.text());h=h.replace("h=h.replace('[[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"]]','[[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"],[\"Negative\",\"Harmful\"]]');","h=h.replace('[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"]]','[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"],[\"Negative\",\"Harmful\"]]');");document.open();document.write(h);document.close()}catch(e){document.body.innerHTML='<div style="font-family:system-ui;padding:24px"><h2>載入失敗</h2><p>'+e.message+'</p></div>'}})();</script></body></html>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>學術英文四階段訓練 V7</title></head><body><div style="font-family:system-ui;padding:24px">正在載入教授論文來源題庫…</div><script>(async()=>{try{let h=await fetch('./study-v6.html?unique=1',{cache:'no-store'}).then(r=>r.text());h=h.replace("h=h.replace('[[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"]]','[[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"],[\"Negative\",\"Harmful\"]]');","h=h.replace('[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"]]','[\"Attractive\",\"Pretty\",\"Pleasant\",\"Interesting\",\"Fascinating\",\"Positive\"],[\"Negative\",\"Harmful\"]]');");const keyboardScript=`<script>(function(){
+function isVisible(el){return !!(el&&el.offsetParent!==null&&!el.disabled)}
+function visibleButtons(){return Array.from(document.querySelectorAll('button')).filter(isVisible)}
+function text(el){return (el.innerText||el.textContent||'').trim()}
+function findButton(predicate){return visibleButtons().find(function(b){return predicate(text(b))})}
+function isTyping(){var a=document.activeElement;return !!(a&&(['INPUT','TEXTAREA','SELECT'].includes(a.tagName)||a.isContentEditable))}
+function revealButton(){return findButton(function(t){return t.includes('顯示中文')||t.includes('隱藏中文')||t.includes('收起中文')})}
+function missButton(){return findButton(function(t){return t.includes('不會')})}
+function knownButton(){return findButton(function(t){return t.includes('會')&&!t.includes('不會')})}
+document.addEventListener('keydown',function(e){
+ if(isTyping())return;
+ var reveal=revealButton();
+ var miss=missButton();
+ var known=knownButton();
+ var stageOne=!!reveal||!!(miss&&known);
+ if(!stageOne)return;
+ if(e.key==='Enter'){
+   if(reveal){e.preventDefault();reveal.click()}
+ }else if(e.key==='ArrowLeft'){
+   if(miss){e.preventDefault();miss.click()}
+ }else if(e.key==='ArrowRight'){
+   if(known){e.preventDefault();known.click()}
+ }
+});
+var hint=document.createElement('div');
+hint.id='stage1-keyboard-hint';
+hint.textContent='鍵盤：Enter 顯示中文　← 不會　→ 會';
+hint.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9999;background:rgba(20,31,55,.92);color:white;padding:8px 14px;border-radius:999px;font:600 14px system-ui;box-shadow:0 3px 10px rgba(0,0,0,.18);pointer-events:none;white-space:nowrap';
+document.body.appendChild(hint);
+})();<\/script>`;h=h.replace('</body>',keyboardScript+'</body>');document.open();document.write(h);document.close()}catch(e){document.body.innerHTML='<div style="font-family:system-ui;padding:24px"><h2>載入失敗</h2><p>'+e.message+'</p></div>'}})();</script></body></html>
