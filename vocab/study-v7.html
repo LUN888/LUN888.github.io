@@ -18,66 +18,81 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dff3ff}
 (function(){
   const frame=document.getElementById('app');
 
+  function inner(){
+    try{
+      const doc=frame.contentDocument;
+      const win=frame.contentWindow;
+      if(!doc||!win||!doc.getElementById('recReveal')) return null;
+      return {doc,win};
+    }catch(e){return null;}
+  }
+
   function visible(el){
     if(!el) return false;
     const s=el.ownerDocument.defaultView.getComputedStyle(el);
     return s.display!=='none' && s.visibility!=='hidden' && !el.classList.contains('hidden');
   }
 
-  function typing(doc){
+  function isTyping(doc){
     const a=doc.activeElement;
     return !!(a && (a.matches('input, textarea, select') || a.isContentEditable));
   }
 
-  function install(){
-    let doc,win;
-    try{
-      doc=frame.contentDocument;
-      win=frame.contentWindow;
-    }catch(e){ return; }
-    if(!doc || !win || !doc.getElementById('recReveal')) return;
-    if(doc.__stage1KeyboardInstalled) return;
-    doc.__stage1KeyboardInstalled=true;
+  function perform(e){
+    const x=inner();
+    if(!x) return;
+    const doc=x.doc;
+    if(isTyping(doc)) return;
 
-    const handler=function(e){
-      if(typing(doc)) return;
-      const mode=doc.getElementById('recognition');
-      if(!mode || mode.classList.contains('hidden')) return;
+    const mode=doc.getElementById('recognition');
+    if(!mode || mode.classList.contains('hidden')) return;
 
-      const reveal=doc.getElementById('recReveal');
-      const miss=doc.getElementById('recMiss');
-      const know=doc.getElementById('recKnow');
+    const reveal=doc.getElementById('recReveal');
+    const miss=doc.getElementById('recMiss');
+    const know=doc.getElementById('recKnow');
 
-      if(e.key==='Enter' && visible(reveal) && !reveal.disabled){
-        e.preventDefault();
-        e.stopPropagation();
-        reveal.click();
-        return;
-      }
-      if(e.key==='ArrowLeft' && visible(miss) && !miss.disabled){
-        e.preventDefault();
-        e.stopPropagation();
-        miss.click();
-        return;
-      }
-      if(e.key==='ArrowRight' && visible(know) && !know.disabled){
-        e.preventDefault();
-        e.stopPropagation();
-        know.click();
-      }
-    };
-
-    doc.addEventListener('keydown',handler,true);
-    win.addEventListener('keydown',handler,true);
+    if(e.key==='Enter' && visible(reveal) && !reveal.disabled){
+      e.preventDefault();
+      e.stopPropagation();
+      reveal.click();
+      return;
+    }
+    if(e.key==='ArrowLeft' && visible(miss) && !miss.disabled){
+      e.preventDefault();
+      e.stopPropagation();
+      miss.click();
+      return;
+    }
+    if(e.key==='ArrowRight' && visible(know) && !know.disabled){
+      e.preventDefault();
+      e.stopPropagation();
+      know.click();
+    }
   }
 
+  function installInner(){
+    const x=inner();
+    if(!x) return;
+    const doc=x.doc;
+    if(doc.__stage1KeyboardInstalled) return;
+    doc.__stage1KeyboardInstalled=true;
+    doc.addEventListener('keydown',perform,true);
+    try{x.win.focus();}catch(e){}
+  }
+
+  // 外層有焦點時也能使用快捷鍵
+  document.addEventListener('keydown',perform,true);
+
+  // 內層頁面有焦點時也能使用快捷鍵
   frame.addEventListener('load',function(){
-    setTimeout(install,100);
-    setTimeout(install,500);
-    setTimeout(install,1200);
+    setTimeout(installInner,100);
+    setTimeout(installInner,500);
+    setTimeout(installInner,1200);
+    setTimeout(function(){try{frame.contentWindow.focus();}catch(e){}},1400);
   });
 
-  setInterval(install,400);
+  // 內頁會經過數次 document.write，持續重新確認最終頁面
+  setInterval(installInner,300);
 })();
 </script>
 </body>
